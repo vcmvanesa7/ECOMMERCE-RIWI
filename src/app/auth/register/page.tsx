@@ -1,85 +1,106 @@
 "use client";
 
-import React from "react";
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  Stack,
+  Divider,
+} from "@mui/material";
 import { useForm } from "react-hook-form";
+import { registerSchema, RegisterFormValues } from "@/schemas/validations";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { registerSchema, RegisterFormValues } from "@/schemas/auth/registerSchema";
-import { TextField, Button } from "@mui/material";
-import { useRouter } from "next/navigation";
+import { registerUser } from "@/services/auth.service";
 import { toast } from "sonner";
+import GoogleIcon from "@mui/icons-material/Google";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
+  const router = useRouter();
+
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: yupResolver(registerSchema),
   });
 
-  const router = useRouter();
-
-  async function onSubmit(data: RegisterFormValues) {
+  const onSubmit = async (data: RegisterFormValues) => {
     try {
-      const res = await fetch("/api/users/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+      await registerUser(data);
 
-      if (!res.ok) {
-        const err = await res.json();
-        toast.error(err.error || "Failed to register");
-        return;
-      }
-
-      toast.success("Registered! Please login.");
+      toast.success("Usuario registrado. Revisa tu correo.");
       router.push("/auth/login");
-    } catch (err) {
-      console.error(err);
-      toast.error("Server error");
+    } catch (error: any) {
+      toast.error(error.message || "Error al registrar");
     }
-  }
+  };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate>
-      <TextField
-        label="Name"
-        fullWidth
-        margin="normal"
-        {...register("name")}
-        error={!!errors.name}
-        helperText={errors.name?.message}
-      />
+    <Box
+      sx={{
+        maxWidth: 420,
+        mx: "auto",
+        mt: 8,
+        p: 4,
+        borderRadius: 2,
+        boxShadow: 3,
+      }}
+    >
+      <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
+        Create an account
+      </Typography>
 
-      <TextField
-        label="Email"
-        fullWidth
-        margin="normal"
-        {...register("email")}
-        error={!!errors.email}
-        helperText={errors.email?.message}
-      />
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <Stack spacing={2}>
+          <TextField
+            label="Name"
+            {...register("name")}
+            error={!!errors.name}
+            helperText={errors.name?.message}
+            fullWidth
+          />
 
-      <TextField
-        label="Password"
-        type="password"
-        fullWidth
-        margin="normal"
-        {...register("password")}
-        error={!!errors.password}
-        helperText={errors.password?.message}
-      />
+          <TextField
+            label="Email"
+            {...register("email")}
+            error={!!errors.email}
+            helperText={errors.email?.message}
+            fullWidth
+          />
 
-      <Button
-        type="submit"
-        variant="contained"
-        disabled={isSubmitting}
-        fullWidth
-        sx={{ mt: 2 }}
-      >
-        Register
-      </Button>
-    </form>
+          <TextField
+            label="Password"
+            type="password"
+            {...register("password")}
+            error={!!errors.password}
+            helperText={errors.password?.message}
+            fullWidth
+          />
+
+          <Button type="submit" variant="contained" fullWidth>
+            Register
+          </Button>
+
+          <Divider>Or continue with</Divider>
+
+          <Button
+            variant="outlined"
+            fullWidth
+            startIcon={<GoogleIcon />}
+            onClick={() => signIn("google", { callbackUrl: "/" })}
+          >
+            Continue with Google
+          </Button>
+
+          <Button fullWidth onClick={() => router.push("/auth/login")}>
+            Already have an account?
+          </Button>
+        </Stack>
+      </form>
+    </Box>
   );
 }
