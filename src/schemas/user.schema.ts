@@ -3,10 +3,15 @@ import mongoose, { Schema, Model } from "mongoose";
 export interface IUser {
   name?: string;
   email: string;
-  passwordHash?: string | null;
+  passwordHash?: string | null;        // only for credentials provider
   provider: "credentials" | "google";
   role: "client" | "admin" | "support";
-  image?: { url: string; public_id?: string | null } | null;
+
+  // Cloudinary image
+  image?: {
+    url: string | null;
+    public_id?: string | null;
+  } | null;
 
   createdAt?: Date;
   updatedAt?: Date;
@@ -14,27 +19,53 @@ export interface IUser {
 
 const UserSchema = new Schema<IUser>(
   {
-    name: { type: String },
-    email: { type: String, required: true, unique: true, index: true },
-    passwordHash: { type: String, default: null },
+    name: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+      lowercase: true,
+      trim: true,
+    },
+
+    passwordHash: {
+      type: String,
+      default: null, // Google users do not have password
+    },
+
     provider: {
       type: String,
       enum: ["credentials", "google"],
       default: "credentials",
     },
+
     role: {
       type: String,
       enum: ["client", "admin", "support"],
       default: "client",
     },
+
     image: {
-      url: { type: String, required: false },
-      public_id: { type: String, default: null },
+      type: {
+        url: { type: String, default: null },
+        public_id: { type: String, default: null },
+      },
+      default: {
+        url: null,
+        public_id: null,
+      },
     },
   },
   { timestamps: true }
 );
 
 export const User: Model<IUser> =
-  (mongoose.models.User as Model<IUser>) ||
-  mongoose.model<IUser>("User", UserSchema);
+  mongoose.models.User || mongoose.model<IUser>("User", UserSchema);
+
+  

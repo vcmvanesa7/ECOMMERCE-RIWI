@@ -1,22 +1,25 @@
 // src/services/user.service.ts
 import axios from "axios";
+import type { UpdateProfileValues } from "@/lib/validators";
+
+export type UpdatedUser = {
+  id: string;
+  email: string;
+  name?: string;
+  image?: {
+    url: string;
+    public_id: string;
+  } | null;
+};
 
 /**
- * Update profile service
- * Email is NEVER sent — NextAuth session defines the user identity.
+ * Calls API to update current user's profile.
+ * Returns the updated user object.
  */
 export async function updateProfile(data: {
   name?: string;
   imageBase64?: string | null;
 }) {
-  try {
-    const res = await axios.put("/api/users/update-profile", data);
-    return res.data.user; // return updated user safely
-  } catch (error: any) {
-    // Extract clean error message
-    const message =
-      error.response?.data?.error || "Failed to update profile.";
-
-    throw new Error(message);
-  }
+  const res = await axios.put("/api/users/update-profile", data);
+  return res.data.user; 
 }

@@ -35,7 +35,10 @@ export const authOptions: NextAuthOptions = {
 
         if (!user || !user.passwordHash) return null;
 
-        const valid = await comparePassword(credentials.password, user.passwordHash);
+        const valid = await comparePassword(
+          credentials.password,
+          user.passwordHash
+        );
         if (!valid) return null;
 
         return {
@@ -43,6 +46,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
+          image: user.image?.url || null,
         };
       },
     }),
@@ -52,18 +56,15 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 
   callbacks: {
-    /** 🔥 Intercepción del login con Google */
     async signIn({ user, account }) {
       if (account?.provider === "google") {
         try {
           await connect();
-
           const gUser = user as GoogleUser;
           if (!gUser.email) return false;
 
           const existing = await User.findOne({ email: gUser.email });
 
-          /** Si NO existe → lo creo */
           if (!existing) {
             const created = await User.create({
               name: gUser.name || "",
@@ -76,38 +77,44 @@ export const authOptions: NextAuthOptions = {
               },
             });
 
-            /** Enviar email bienvenida */
             try {
               const html = `
-                <p>Hola ${created.name || ""},</p>
-                <p>Bienvenid@ a nuestra tienda 🛒✨</p>
-                <p>Gracias por registrarte con Google.</p>
-              `;
-              await sendEmail(created.email, "¡Bienvenido/a a nuestra tienda!", html);
-            } catch (emailErr) {
-              console.warn("Error enviando email de bienvenida:", emailErr);
-            }
+              <p>Hola ${created.name || ""},</p>
+              <p>Bienvenid@ a nuestra tienda</p>
+              <p>Gracias por registrarte con Google.</p>
+            `;
+              await sendEmail(created.email, "Bienvenido", html);
+            } catch {}
           }
-        } catch (err) {
-          console.error("Error creando usuario con Google:", err);
-        }
+        } catch {}
       }
 
       return true;
     },
 
-    /** Guardar rol en el JWT */
-    async jwt({ token, user }) {
-      if (user) token.role = (user as any).role || "client";
+    async jwt({ token, user, trigger, session }) {
+      // Cuando el usuario inicia sesión
+      if (user) {
+        token.role = (user as any).role || "client";
+        token.name = user.name ?? token.name;
+        token.picture = (user as any).image ?? token.picture;
+      }
+      if (trigger === "update" && session?.user) {
+        if (session.user.name) token.name = session.user.name;
+        if (session.user.image) token.picture = session.user.image;
+      }
+
       return token;
     },
 
-    /** Pasar rol al session.user */
     async session({ session, token }) {
-      (session.user as any).role = (token as any).role || "client";
+      if (session.user) {
+        session.user.role = token.role || "client";
+        session.user.name = token.name ?? session.user.name;
+        session.user.image = token.picture ?? session.user.image ?? null;
+      }
+
       return session;
     },
   },
 };
-
-export default NextAuth(authOptions);

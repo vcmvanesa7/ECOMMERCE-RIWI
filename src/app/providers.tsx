@@ -11,12 +11,12 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     <SessionProvider>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        
+
         <CartProvider>
-          <Toaster richColors position="top-right" />
+          {/* FIX: prevenir hydration mismatch */}
+            <Toaster richColors position="top-right" />
           {children}
         </CartProvider>
-
       </ThemeProvider>
     </SessionProvider>
   );
