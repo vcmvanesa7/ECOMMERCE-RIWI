@@ -92,16 +92,15 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
 
-    async jwt({ token, user, trigger, session }) {
-      // Cuando el usuario inicia sesión
-      if (user) {
-        token.role = (user as any).role || "client";
-        token.name = user.name ?? token.name;
-        token.picture = (user as any).image ?? token.picture;
-      }
-      if (trigger === "update" && session?.user) {
-        if (session.user.name) token.name = session.user.name;
-        if (session.user.image) token.picture = session.user.image;
+    async jwt({ token, user }) {
+      // Si es login inicial:
+      if (user?.email) {
+        await connect();
+        const dbUser = await User.findOne({ email: user.email });
+
+        token.role = dbUser?.role || "client";
+        token.name = dbUser?.name || token.name;
+        token.picture = dbUser?.image?.url || token.picture;
       }
 
       return token;
@@ -109,11 +108,10 @@ export const authOptions: NextAuthOptions = {
 
     async session({ session, token }) {
       if (session.user) {
-        session.user.role = token.role || "client";
-        session.user.name = token.name ?? session.user.name;
-        session.user.image = token.picture ?? session.user.image ?? null;
+        session.user.role = token.role;
+        session.user.name = token.name;
+        session.user.image = token.picture;
       }
-
       return session;
     },
   },

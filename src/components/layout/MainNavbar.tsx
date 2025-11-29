@@ -38,7 +38,7 @@ export default function MainNavbar() {
           onClick={() => router.push("/")}
         >
           <Typography variant="h6" fontWeight={700}>
-            Vane Store
+            Koy Style
           </Typography>
         </Box>
 
@@ -95,7 +95,7 @@ export default function MainNavbar() {
                 color="inherit"
                 onClick={() => router.push("/admin")}
               >
-                Admin
+                Dashboard Admin
               </Button>
             )}
 

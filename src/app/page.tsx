@@ -1,65 +1,155 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import  Hero  from "@/components/home/Hero";
+import  ProductCard from "@/components/home/ProductCard";
+import  BenefitsStrip  from "@/components/home/Benefits";
+import  PromoBanner  from "@/components/home/PromoBanner";
+
+
+type Product = {
+  _id: string;
+  title: string;
+  price: number;
+  category?: string;
+  images?: { url: string }[];
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: (delay = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, delay },
+  }),
+};
+
+const staggerContainer = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.12,
+    },
+  },
+};
+
+export default function HomePage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const res = await fetch("/api/products?limit=8");
+        const data = await res.json();
+
+        const items = Array.isArray(data) ? data : data.items || [];
+        setProducts(items);
+      } catch (err) {
+        console.error("Error loading products", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProducts();
+  }, []);
+
+  const featured = products.slice(0, 4);
+  const latest = products.slice(4, 8);
+
+ return (
+  <div className="min-h-screen bg-white text-neutral-900">
+    {/* HERO */}
+    <Hero />
+
+    {/* STRIP DE BENEFICIOS */}
+    <BenefitsStrip />
+
+    {/* DESTACADOS */}
+    <section className="max-w-6xl mx-auto px-4 mt-16">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold tracking-tight uppercase text-neutral-900">
+          Featured Drops
+        </h2>
+        <Link
+          href="/products"
+          className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
+        >
+          View all →
+        </Link>
+      </div>
+
+      {loading ? (
+        <p className="text-sm text-neutral-500">Loading products…</p>
+      ) : featured.length === 0 ? (
+        <p className="text-sm text-neutral-500">
+          No products yet. Create some from the admin panel.
+        </p>
+      ) : (
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6"
+        >
+          {featured.map((p, idx) => (
+            <motion.div key={p._id} variants={fadeUp} custom={idx * 0.05}>
+              <ProductCard product={p} />
+            </motion.div>
+          ))}
+        </motion.div>
+      )}
+    </section>
+
+    {/* BANNER KOI */}
+    <PromoBanner />
+
+    {/* NUEVOS LANZAMIENTOS */}
+    {!loading && latest.length > 0 && (
+      <section className="max-w-6xl mx-auto px-4 mt-16 mb-20">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold tracking-tight uppercase text-neutral-900">
+            New in Store
+          </h2>
+          <Link
+            href="/products?sort=newest"
+            className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            See latest →
+          </Link>
         </div>
-      </main>
-    </div>
-  );
+
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+          className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-6"
+        >
+          {latest.map((p, idx) => (
+            <motion.div key={p._id} variants={fadeUp} custom={idx * 0.05}>
+              <ProductCard product={p} compact />
+            </motion.div>
+          ))}
+        </motion.div>
+      </section>
+    )}
+
+    {/* FOOTER */}
+    <footer className="border-t border-neutral-200 mt-16">
+      <div className="max-w-6xl mx-auto px-4 py-6 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-neutral-500">
+        <span>© {new Date().getFullYear()} KOI Streetwear. All rights reserved.</span>
+        <span className="flex gap-4">
+          <button className="hover:text-neutral-800 transition">Privacy</button>
+          <button className="hover:text-neutral-800 transition">Terms</button>
+          <button className="hover:text-neutral-800 transition">Support</button>
+        </span>
+      </div>
+    </footer>
+  </div>
+);
 }

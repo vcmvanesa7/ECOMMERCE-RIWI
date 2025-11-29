@@ -7,9 +7,11 @@ import {
   Typography,
   Stack,
   Chip,
-  IconButton
+  IconButton,
 } from "@mui/material";
-
+import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useForm, useFieldArray, UseFormReturn } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 
@@ -20,7 +22,10 @@ import { toast } from "sonner";
 import { useState } from "react";
 import DeleteIcon from "@mui/icons-material/Delete";
 
+import styles from "./ProductForm.module.css";
+
 export default function CreateProductPage() {
+  const router = useRouter();
   const [uploading, setUploading] = useState(false);
 
   const {
@@ -29,296 +34,282 @@ export default function CreateProductPage() {
     control,
     watch,
     setValue,
-    formState: { errors }
+    formState: { errors },
   }: UseFormReturn<ProductFormValues> = useForm<ProductFormValues>({
     resolver: yupResolver(productSchema) as any,
     defaultValues: {
       colors: [],
       sizes: [],
       variants: [],
-      images: []
-    }
+      images: [],
+    },
   });
-  console.log(errors);
 
-
-  // Watch arrays (safe alternative to _formValues)
   const colors = watch("colors") || [];
   const sizes = watch("sizes") || [];
   const imagesWatch = watch("images") || [];
 
-  // Field Arrays
-  const { fields: variants, append: addVariant, remove: removeVariant } =
-    useFieldArray({ control, name: "variants" });
+  const {
+    fields: variants,
+    append: addVariant,
+    remove: removeVariant,
+  } = useFieldArray({ control, name: "variants" });
 
-  const { fields: images, append: addImage, remove: removeImage } =
-    useFieldArray({ control, name: "images" });
+  const {
+    fields: images,
+    append: addImage,
+    remove: removeImage,
+  } = useFieldArray({ control, name: "images" });
 
   const onSubmit = async (data: ProductFormValues) => {
     try {
       await createProduct(data);
-      toast.success("Product created successfully");
+      toast.success("Producto creado correctamente");
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || "Error creating product");
+      toast.error(err?.response?.data?.error || "Error creando producto");
     }
   };
 
   return (
-    <Box maxWidth={800} mx="auto" p={4}>
-      <Typography variant="h4" mb={4} fontWeight={700}>
-        Create Product
-      </Typography>
+    <Box className={styles.container}>
+      <div className={styles.backRow}>
+        <IconButton
+          onClick={() => router.push("/admin/products")}
+          className={styles.backButton}
+        >
+          <ArrowBackIosNewIcon />
+        </IconButton>
+      </div>
+      <Typography className={styles.title}>Crear Producto</Typography>
 
-      <Stack spacing={3}>
+      {/* General Info */}
+      <Box className={styles.section}>
+        <Typography className={styles.sectionTitle}>
+          Información General
+        </Typography>
 
-        {/* Title */}
-        <TextField
-          label="Title"
-          {...register("title")}
-          error={!!errors.title}
-          helperText={errors.title?.message}
-        />
-
-        {/* Description */}
-        <TextField
-          label="Description"
-          multiline
-          rows={4}
-          {...register("description")}
-          error={!!errors.description}
-          helperText={errors.description?.message}
-        />
-
-        {/* Brand */}
-        <TextField
-          label="Brand"
-          {...register("brand")}
-          error={!!errors.brand}
-          helperText={errors.brand?.message}
-        />
-
-        {/* Category */}
-        <TextField
-          label="Category"
-          {...register("category")}
-          error={!!errors.category}
-          helperText={errors.category?.message}
-        />
-
-        {/* Price */}
-        <TextField
-          label="Price"
-          type="number"
-          {...register("price")}
-          error={!!errors.price}
-          helperText={errors.price?.message}
-        />
-
-        {/* Discount */}
-        <TextField
-          label="Discount (%)"
-          type="number"
-          {...register("discount")}
-          error={!!errors.discount}
-          helperText={errors.discount?.message}
-        />
-
-        {/* Colors */}
-        <Stack spacing={1}>
-          <Typography>Colors (hex)</Typography>
-
-          <input
-            type="text"
-            placeholder="#000000"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-
-                const hex = (e.target as HTMLInputElement).value.trim();
-                if (!hex) return;
-
-                const current = watch("colors") || [];
-                setValue("colors", [...current, hex]);
-
-                (e.target as HTMLInputElement).value = "";
-              }
-            }}
+        <Stack spacing={3}>
+          <TextField
+            label="Title"
+            {...register("title")}
+            error={!!errors.title}
+            helperText={errors.title?.message}
           />
 
-          <Stack direction="row" spacing={1} flexWrap="wrap">
-            {colors.map((color, i) => (
-              <Chip
-                key={i}
-                label={color}
-                onDelete={() =>
-                  setValue(
-                    "colors",
-                    colors.filter((_, idx) => idx !== i)
-                  )
-                }
-                sx={{
-                  backgroundColor: color,
-                  color: "#fff"
-                }}
-              />
-            ))}
-          </Stack>
-        </Stack>
-
-        {/* Sizes */}
-        <Stack spacing={1}>
-          <Typography>Sizes</Typography>
-
-          <input
-            type="text"
-            placeholder="S, M, L..."
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-
-                const size = (e.target as HTMLInputElement).value.trim();
-                if (!size) return;
-
-                const current = watch("sizes") || [];
-                setValue("sizes", [...current, size]);
-
-                (e.target as HTMLInputElement).value = "";
-              }
-            }}
+          <TextField
+            label="Description"
+            multiline
+            rows={4}
+            {...register("description")}
+            error={!!errors.description}
+            helperText={errors.description?.message}
           />
 
-          <Stack direction="row" spacing={1} flexWrap="wrap">
-            {sizes.map((size, i) => (
-              <Chip
-                key={i}
-                label={size}
-                onDelete={() =>
-                  setValue(
-                    "sizes",
-                    sizes.filter((_, idx) => idx !== i)
-                  )
-                }
-              />
-            ))}
+          <TextField
+            label="Brand"
+            {...register("brand")}
+            error={!!errors.brand}
+            helperText={errors.brand?.message}
+          />
+
+          <TextField
+            label="Category"
+            {...register("category")}
+            error={!!errors.category}
+            helperText={errors.category?.message}
+          />
+
+          <Stack direction="row" spacing={3}>
+            <TextField
+              label="Price"
+              type="number"
+              {...register("price")}
+              error={!!errors.price}
+              helperText={errors.price?.message}
+            />
+
+            <TextField
+              label="Discount (%)"
+              type="number"
+              {...register("discount")}
+              error={!!errors.discount}
+              helperText={errors.discount?.message}
+            />
           </Stack>
         </Stack>
+      </Box>
 
-        {/* Variants */}
-        <Box mt={3}>
-          <Typography variant="h6">Variants</Typography>
+      {/* Colors */}
+      <Box className={styles.section}>
+        <Typography className={styles.sectionTitle}>Colores</Typography>
 
-          {variants.map((field, index) => (
-            <Stack
-              key={field.id}
-              direction="row"
-              spacing={2}
-              alignItems="center"
-              mt={1}
-            >
-              <TextField
-                label="Color"
-                {...register(`variants.${index}.color`)}
-              />
+        <input
+          className={styles.colorInput}
+          type="text"
+          placeholder="#000000"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              const hex = (e.target as HTMLInputElement).value.trim();
+              if (!hex) return;
 
-              <TextField
-                label="Size"
-                {...register(`variants.${index}.size`)}
-              />
-
-              <TextField
-                label="Stock"
-                type="number"
-                {...register(`variants.${index}.stock`)}
-              />
-
-              <IconButton onClick={() => removeVariant(index)}>
-                <DeleteIcon />
-              </IconButton>
-            </Stack>
-          ))}
-
-          <Button
-            sx={{ mt: 1 }}
-            onClick={() =>
-              addVariant({ color: "", size: "", stock: 0 })
+              if (!/^#([0-9A-F]{3}){1,2}$/i.test(hex)) {
+                toast.error("Color inválido");
+                return;
+              }
+              setValue("colors", [...colors, hex]);
+              (e.target as HTMLInputElement).value = "";
             }
-          >
-            Add Variant
-          </Button>
-        </Box>
+          }}
+        />
 
-        {/* Images */}
-        <Box>
-          <Typography variant="h6">Images</Typography>
+        <Stack direction="row" gap={1} flexWrap="wrap">
+          {colors.map((color, i) => (
+            <Chip
+              key={i}
+              label={color}
+              onDelete={() =>
+                setValue(
+                  "colors",
+                  colors.filter((_, idx) => idx !== i)
+                )
+              }
+              sx={{ backgroundColor: color, color: "#fff" }}
+            />
+          ))}
+        </Stack>
+      </Box>
 
+      {/* Sizes */}
+      <Box className={styles.section}>
+        <Typography className={styles.sectionTitle}>Tallas</Typography>
+
+        <input
+          className={styles.sizeInput}
+          placeholder="S, M, L..."
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              const size = (e.target as HTMLInputElement).value.trim();
+              if (!size) return;
+
+              setValue("sizes", [...sizes, size]);
+              (e.target as HTMLInputElement).value = "";
+            }
+          }}
+        />
+
+        <Stack direction="row" gap={1} flexWrap="wrap">
+          {sizes.map((size, i) => (
+            <Chip
+              key={i}
+              label={size}
+              onDelete={() =>
+                setValue(
+                  "sizes",
+                  sizes.filter((_, idx) => idx !== i)
+                )
+              }
+            />
+          ))}
+        </Stack>
+      </Box>
+
+      {/* Variants */}
+      <Box className={styles.section}>
+        <Typography className={styles.sectionTitle}>Variantes</Typography>
+
+        {variants.map((field, index) => (
+          <div key={field.id} className={styles.variantRow}>
+            <TextField label="Color" {...register(`variants.${index}.color`)} />
+            <TextField label="Size" {...register(`variants.${index}.size`)} />
+            <TextField
+              label="Stock"
+              type="number"
+              {...register(`variants.${index}.stock`)}
+            />
+            <IconButton onClick={() => removeVariant(index)}>
+              <DeleteIcon />
+            </IconButton>
+          </div>
+        ))}
+
+        <Button onClick={() => addVariant({ color: "", size: "", stock: 0 })}>
+          Añadir variante
+        </Button>
+      </Box>
+
+      {/* Images */}
+      <Box className={styles.section}>
+        <Typography className={styles.sectionTitle}>Imágenes</Typography>
+
+        {/* Imagenes mostradas horizontalmente */}
+        <div className={styles.horizontalList}>
           {images.map((img, index) => (
-            <Stack
-              key={img.id}
-              direction="row"
-              spacing={2}
-              alignItems="center"
-              mt={1}
-            >
+            <div key={img.id} className={styles.imageStack}>
               {imagesWatch[index]?.url && (
-                <img
+                <Image
                   src={imagesWatch[index].url}
-                  width={80}
-                  style={{ borderRadius: 6 }}
+                  alt="Preview"
+                  width={100}
+                  height={100}
+                  className={styles.imagePreview}
                 />
               )}
 
               <IconButton onClick={() => removeImage(index)}>
                 <DeleteIcon />
               </IconButton>
-            </Stack>
+            </div>
           ))}
-
-          <Button
-            variant="outlined"
-            sx={{ mt: 1 }}
-            disabled={uploading}
-            component="label"
-          >
-            Upload Image
-            <input
-              type="file"
-              hidden
-              accept="image/*"
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-
-                setUploading(true);
-
-                const formData = new FormData();
-                formData.append("file", file);
-
-                const res = await fetch("/api/upload", {
-                  method: "POST",
-                  body: formData
-                });
-
-                const uploaded = await res.json();
-
-                addImage({
-                  url: uploaded.url,
-                  public_id: uploaded.public_id
-                });
-
-                setUploading(false);
-              }}
-            />
-          </Button>
-        </Box>
+        </div>
 
         <Button
-          variant="contained"
-          size="large"
-          onClick={handleSubmit(onSubmit)}
+          variant="outlined"
+          component="label"
+          className={styles.uploadLabel}
+          disabled={uploading}
         >
-          Create Product
+          Subir imagen
+          <input
+            type="file"
+            hidden
+            accept="image/*"
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+
+              setUploading(true);
+
+              const formData = new FormData();
+              formData.append("file", file);
+
+              const res = await fetch("/api/upload", {
+                method: "POST",
+                body: formData,
+              });
+
+              const uploaded = await res.json();
+
+              addImage({
+                url: uploaded.url,
+                public_id: uploaded.public_id,
+              });
+
+              setUploading(false);
+            }}
+          />
         </Button>
-      </Stack>
+      </Box>
+
+      <Button
+        variant="contained"
+        size="large"
+        className={styles.submitButton}
+        onClick={handleSubmit(onSubmit)}
+      >
+        Crear Producto
+      </Button>
     </Box>
   );
 }

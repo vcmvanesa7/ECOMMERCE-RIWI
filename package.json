@@ -11,14 +11,17 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@heroui/react": "^2.8.5",
     "@hookform/resolvers": "^5.2.2",
     "@mui/icons-material": "^6.5.0",
     "@mui/material": "^6.5.0",
     "@mui/system": "^6.5.0",
     "@mui/types": "^7.4.8",
+    "@next/font": "^14.2.15",
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.8.0",
+    "framer-motion": "^12.23.24",
     "mongoose": "^9.0.0",
     "next": "16.0.5",
     "next-auth": "^4.24.13",
@@ -36,11 +39,13 @@
     "@types/nodemailer": "^7.0.4",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "autoprefixer": "^10.4.22",
     "babel-plugin-react-compiler": "1.0.0",
     "baseline-browser-mapping": "^2.8.32",
     "eslint": "^9",
     "eslint-config-next": "16.0.5",
-    "tailwindcss": "^4",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.17",
     "typescript": "5.3"
   }
 }
