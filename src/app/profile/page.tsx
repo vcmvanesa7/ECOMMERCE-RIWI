@@ -37,7 +37,6 @@ export default function ProfilePage() {
     formState: { errors },
     reset,
   } = useForm<UpdateProfileValues>({
-    // si el tipado molesta, se puede quitar el "as any"
     resolver: yupResolver(updateProfileSchema) as any,
     defaultValues: { name: "", imageBase64: null },
   });
