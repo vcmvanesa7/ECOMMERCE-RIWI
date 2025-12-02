@@ -5,7 +5,7 @@ import Link from "next/link";
 function Hero() {
   return (
     <section className="border-b border-neutral-200">
-      <div className="max-w-6xl mx-auto px-4 py-12 md:py-20 grid md:grid-cols-2 gap-10 items-center">
+      <div className="max-w-[1400px] mx-auto px-6 py-12 md:py-20 grid md:grid-cols-2 gap-10 items-center">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -23,7 +23,8 @@ function Hero() {
           </h1>
           <p className="text-sm md:text-base text-neutral-600 max-w-lg">
             Tees oversized, gráficos con energía Koi, pensados para calle, skate
-            y noche. Diseñados para combinar con cargos, denim y sneakers pesados.
+            y noche. Diseñados para combinar con cargos, denim y sneakers
+            pesados.
           </p>
 
           <div className="flex flex-wrap gap-3 pt-2">

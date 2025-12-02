@@ -1,15 +1,18 @@
+// src/app/api/products/[id]/route.ts
 import { NextResponse } from "next/server";
 import connect from "@/lib/db";
-import { Product } from "@/schemas/product.schema";
-import { productSchema } from "@/lib/validators";
+import { Product } from "@/schemas/products/product.schema";
+import { productSchema } from "@/lib/validators/validators";
+import { handleApiError } from "@/lib/handleApiError";
+import cloudinary from "@/lib/cloudinary";
 
-//  GET /api/products/:id 
+// GET /api/products/:id
 export async function GET(
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { id } = await context.params;
 
     await connect();
     const product = await Product.findById(id);
@@ -19,69 +22,82 @@ export async function GET(
     }
 
     return NextResponse.json(product);
-  } catch {
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  } catch (error) {
+    return handleApiError(error, "Failed to load product");
   }
 }
 
-// PUT 
+// PUT /api/products/:id
 export async function PUT(
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { id } = await context.params;
+
     await connect();
 
     const body = await req.json();
     const validated = await productSchema.validate(body, { abortEarly: false });
 
-    const cleanArray = (arr?: (string | undefined)[]) =>
-      Array.isArray(arr) ? arr.filter((v): v is string => !!v) : [];
-
-    const cleaned = {
-      ...validated,
-      colors: cleanArray(validated.colors),
-      sizes: cleanArray(validated.sizes),
+    const cleanArray = (arr: unknown): string[] => {
+      if (!Array.isArray(arr)) return [];
+      return arr.filter(
+        (v): v is string => typeof v === "string" && v.trim() !== ""
+      );
     };
 
-    const updated = await Product.findByIdAndUpdate(id, cleaned, { new: true });
+    const updated = await Product.findByIdAndUpdate(
+      id,
+      {
+        ...validated,
+        colors: cleanArray(validated.colors),
+        sizes: cleanArray(validated.sizes),
+        variants: validated.variants,
+        images: validated.images,
+        collectionId: validated.collectionId || null,
+      },
+      { new: true }
+    );
 
     if (!updated) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
     return NextResponse.json(updated);
-  } catch (error: unknown) {
-    let response: unknown = "Error updating product";
-    if (typeof error === "object" && error !== null && "errors" in error) {
-      response = (error as { errors: unknown }).errors;
-    }
-
-    return NextResponse.json(
-      { error: response },
-      { status: 400 }
-    );
+  } catch (error) {
+    return handleApiError(error, "Failed to update product");
   }
 }
 
-// DELETE 
+// DELETE /api/products/:id
 export async function DELETE(
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { id } = await context.params;
+
     await connect();
 
-    const deleted = await Product.findByIdAndDelete(id);
-
-    if (!deleted) {
+    // Buscar producto
+    const product = await Product.findById(id);
+    if (!product) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
+    //  ELIMINAR TODAS LAS IMÁGENES DE CLOUDINARY
+    for (const img of product.images) {
+      if (img.public_id) {
+        await cloudinary.uploader.destroy(img.public_id);
+      }
+    }
+
+    // ELIMINAR PRODUCTO
+    await Product.findByIdAndDelete(id);
+
     return NextResponse.json({ message: "Product deleted" });
-  } catch {
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  } catch (error) {
+    return handleApiError(error, "Failed to delete product");
   }
 }

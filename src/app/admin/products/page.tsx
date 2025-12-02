@@ -1,223 +1,225 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
-import styles from "../products/[id]/edit/editProductForm.module.css";
+import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import {
   Box,
-  Typography,
   Button,
+  CircularProgress,
+  IconButton,
+  Stack,
   Table,
   TableHead,
-  TableRow,
   TableCell,
   TableBody,
-  IconButton,
-  CircularProgress,
-  Stack,
+  TableRow,
   TextField,
+  Typography,
   MenuItem,
 } from "@mui/material";
-
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 
-import { useRouter } from "next/navigation";
+import type { IProduct } from "@/schemas/products/product.schema";
+import type { ICategory } from "@/schemas/products/category.schema";
+
 import {
   getProductsFiltered,
   deleteProduct,
-} from "@/services/products.service";
-import Image from "next/image";
-import { toast } from "sonner";
+} from "@/services/products/products.service";
 
-// Debounce
-function useDebounce(value: string, delay = 500) {
-  const [debounced, setDebounced] = useState(value);
+import { getCategories } from "@/services/products/categories.service";
 
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(timer);
-  }, [value, delay]);
-
-  return debounced;
-}
-
-export default function ProductsListPage() {
-  const router = useRouter();
-
+export default function AdminProductsPage() {
+  const [items, setItems] = useState<IProduct[]>([]);
   const [loading, setLoading] = useState(true);
-  const [products, setProducts] = useState<any[]>([]);
+
+  const [search, setSearch] = useState("");
+  const [categoryId, setCategoryId] = useState("");
+  const [collectionId, setCollectionId] = useState("");
+
+  const [categories, setCategories] = useState<ICategory[]>([]);
+  const [collections, setCollections] = useState<ICategory[]>([]);
+
+  const [page, setPage] = useState(1);
+  const limit = 18;
+
   const [totalPages, setTotalPages] = useState(1);
 
-  // filters
-  const [page, setPage] = useState(1);
-  const [limit] = useState(10);
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("");
-  const [sort, setSort] = useState("newest");
+  // Load categories & collections only once
+  useEffect(() => {
+    const loadFilters = async () => {
+      const all = await getCategories();
+      setCategories(all.filter((c) => c.kind === "category"));
+      setCollections(all.filter((c) => c.kind === "collection"));
+    };
+    loadFilters();
+  }, []);
 
-  const debouncedSearch = useDebounce(search);
+  // Memorized load to avoid warnings
+  const load = useCallback(async () => {
+    setLoading(true);
 
-  const loadProducts = async () => {
-    try {
-      setLoading(true);
-      const data = await getProductsFiltered({
-        page,
-        limit,
-        search: debouncedSearch,
-        category,
-        sort,
-      });
+    const data = await getProductsFiltered({
+      search,
+      categoryId: categoryId || undefined,
+      collectionId: collectionId || undefined,
+      page,
+      limit,
+    });
 
-      setProducts(data.items);
-      setTotalPages(data.pages);
-    } catch (err) {
-      toast.error("Error loading products");
-    } finally {
-      setLoading(false);
-    }
-  };
+    setItems(data.items);
+    setTotalPages(data.pages);
+
+    setLoading(false);
+  }, [search, categoryId, collectionId, page, limit]);
 
   useEffect(() => {
-    loadProducts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, debouncedSearch, category, sort]);
+    Promise.resolve().then(() => {
+      load();
+    });
+  }, [load]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("¿Eliminar este producto?")) return;
-
-    try {
-      await deleteProduct(id);
-      toast.success("Producto eliminado");
-      loadProducts();
-    } catch {
-      toast.error("Error eliminando producto");
-    }
+    if (!confirm("Delete this product?")) return;
+    await deleteProduct(id);
+    load();
   };
 
   return (
-    <Box p={3}>
-      <IconButton
-        onClick={() => router.push("/admin")}
-        className={styles.backButton}
-      >
-        <ArrowBackIosNewIcon />
-      </IconButton>
-
-      <Typography variant="h4" fontWeight="700" mb={4}>
-        Productos
-      </Typography>
-
-      {/* Filters */}
-      <Stack direction="row" spacing={2} mb={3}>
-        <TextField
-          label="Buscar"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          sx={{ width: 250 }}
-        />
-
-        <TextField
-          select
-          label="Categoría"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          sx={{ width: 180 }}
-        >
-          <MenuItem value="">Todas</MenuItem>
-          <MenuItem value="ropa">Ropa</MenuItem>
-          <MenuItem value="zapatos">Zapatos</MenuItem>
-          <MenuItem value="electronica">Electrónica</MenuItem>
-        </TextField>
-
-        <TextField
-          select
-          label="Ordenar por"
-          value={sort}
-          onChange={(e) => setSort(e.target.value)}
-          sx={{ width: 180 }}
-        >
-          <MenuItem value="newest">Más recientes</MenuItem>
-          <MenuItem value="price_asc">Precio menor</MenuItem>
-          <MenuItem value="price_desc">Precio mayor</MenuItem>
-        </TextField>
+    <Box p={4}>
+      <Stack direction="row" justifyContent="space-between" mb={3}>
+        <Typography variant="h4">Products</Typography>
 
         <Button
           variant="contained"
-          onClick={() => router.push("/admin/products/new")}
+          component={Link}
+          href="/admin/products/new"
         >
-          Crear Producto
+          + Create Product
         </Button>
       </Stack>
 
-      {/* Loading */}
-      {loading ? (
-        <Box p={4}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Imagen</TableCell>
-              <TableCell>Título</TableCell>
-              <TableCell>Precio</TableCell>
-              <TableCell>Marca</TableCell>
-              <TableCell>Categoría</TableCell>
-              <TableCell>Acciones</TableCell>
-            </TableRow>
-          </TableHead>
+      {/*  FILTROS*/}
+      <Stack direction="row" spacing={2} mb={3}>
+        {/* Search by name */}
+        <TextField
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+          label="Search by name"
+          fullWidth
+        />
 
-          <TableBody>
-            {products.map((p) => (
-              <TableRow key={p._id}>
-                <TableCell>
-                  {p.images?.[0]?.url && (
-                    <Image
-                      src={p.images[0].url}
-                      alt={p.title}
-                      width={60}
-                      height={60}
-                      style={{ borderRadius: 8, objectFit: "cover" }}
-                    />
-                  )}
-                </TableCell>
+        {/* Category filter */}
+        <TextField
+          select
+          label="Category"
+          value={categoryId}
+          onChange={(e) => {
+            setCategoryId(e.target.value);
+            setPage(1);
+          }}
+          fullWidth
+        >
+          <MenuItem value="">All</MenuItem>
+          {categories.map((c) => (
+            <MenuItem key={c._id} value={c._id}>
+              {c.name}
+            </MenuItem>
+          ))}
+        </TextField>
 
-                <TableCell>{p.title}</TableCell>
-                <TableCell>${p.price}</TableCell>
-                <TableCell>{p.brand}</TableCell>
-                <TableCell>{p.category}</TableCell>
-
-                <TableCell>
-                  <IconButton
-                    color="primary"
-                    onClick={() => router.push(`/admin/products/${p._id}/edit`)}
-                  >
-                    <EditIcon />
-                  </IconButton>
-
-                  <IconButton color="error" onClick={() => handleDelete(p._id)}>
-                    <DeleteIcon />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
-
-      {/* Pagination */}
-      <Stack direction="row" spacing={1} mt={3}>
-        {Array.from({ length: totalPages }).map((_, i) => (
-          <Button
-            key={i}
-            variant={page === i + 1 ? "contained" : "outlined"}
-            onClick={() => setPage(i + 1)}
-          >
-            {i + 1}
-          </Button>
-        ))}
+        {/* Collection filter */}
+        <TextField
+          select
+          label="Collection"
+          value={collectionId}
+          onChange={(e) => {
+            setCollectionId(e.target.value);
+            setPage(1);
+          }}
+          fullWidth
+        >
+          <MenuItem value="">All</MenuItem>
+          {collections.map((c) => (
+            <MenuItem key={c._id} value={c._id}>
+              {c.name}
+            </MenuItem>
+          ))}
+        </TextField>
       </Stack>
+
+      {/* LISTA DE PRODUCTOS */}
+      {loading ? (
+        <CircularProgress />
+      ) : (
+        <>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Title</TableCell>
+                <TableCell>Category</TableCell>
+                <TableCell>Price</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell align="right">Actions</TableCell>
+              </TableRow>
+            </TableHead>
+
+            <TableBody>
+              {items.map((p) => (
+                <TableRow key={p._id}>
+                  <TableCell>{p.title}</TableCell>
+                  <TableCell>{p.categoryId}</TableCell>
+                  <TableCell>${p.price}</TableCell>
+                  <TableCell>{p.status}</TableCell>
+
+                  <TableCell align="right">
+                    <IconButton
+                      component={Link}
+                      href={`/admin/products/${p._id}/edit`}
+                    >
+                      <EditIcon />
+                    </IconButton>
+
+                    <IconButton
+                      color="error"
+                      onClick={() => handleDelete(p._id!)}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+
+          {/* PAGINATION */}
+          <Stack direction="row" justifyContent="center" mt={3} spacing={2}>
+            <Button
+              variant="outlined"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              Prev
+            </Button>
+
+            <Typography align="center" mt={1}>
+              Page {page} of {totalPages}
+            </Typography>
+
+            <Button
+              variant="outlined"
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+            </Button>
+          </Stack>
+        </>
+      )}
     </Box>
   );
 }

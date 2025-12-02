@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import { useCart } from "@/context/cart-context";
+import Image from "next/image";
 
 export default function MainNavbar() {
   const router = useRouter();
@@ -30,82 +31,115 @@ export default function MainNavbar() {
   const role = (session?.user as any)?.role;
 
   return (
-    <AppBar position="static" color="default" elevation={1}>
-      <Toolbar sx={{ maxWidth: 1200, mx: "auto", width: "100%" }}>
-        {/* Logo / brand */}
+    <AppBar
+      position="sticky"
+      elevation={0}
+      sx={{
+        backgroundColor: "#ffffff",
+        borderBottom: "1px solid #e5e5e5",
+      }}
+    >
+      <Toolbar
+        sx={{
+          maxWidth: 1400,
+          mx: "auto",
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
+        {/* LOGO */}
         <Box
-          sx={{ cursor: "pointer" }}
+          sx={{
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+          }}
           onClick={() => router.push("/")}
         >
-          <Typography variant="h6" fontWeight={700}>
-            Koy Style
-          </Typography>
+          <Image
+            src="/logs/Horizontal.png"
+            alt="KOI Logo"
+            width={75}
+            height={30}
+            priority
+            className="opacity-90 hover:opacity-100 transition"
+          />
         </Box>
 
-        {/* Spacer */}
         <Box sx={{ flexGrow: 1 }} />
 
-        {/* Link carrito */}
+        {/* CARRITO */}
         <IconButton
           color="inherit"
           onClick={() => router.push("/cart")}
           sx={{ mr: 2 }}
         >
-          <Badge badgeContent={itemsCount} color="primary">
-            <ShoppingCartIcon />
+          <Badge
+            badgeContent={itemsCount}
+            sx={{ "& .MuiBadge-badge": { backgroundColor: "#111" } }}
+          >
+            <ShoppingCartIcon sx={{ color: "#111" }} />
           </Badge>
         </IconButton>
 
-        {/* Si no está logueado: Login / Register */}
-        {!isLoggedIn && (
+        {/* AUTH BUTTONS */}
+        {!isLoggedIn ? (
           <>
             <Button
-              color="inherit"
               onClick={() => router.push("/auth/login")}
+              sx={{
+                color: "#111",
+                fontWeight: 600,
+                textTransform: "none",
+                mx: 1,
+              }}
             >
               Login
             </Button>
+
             <Button
-              color="primary"
-              variant="contained"
-              sx={{ ml: 1 }}
               onClick={() => router.push("/auth/register")}
+              sx={{
+                bgcolor: "#111",
+                color: "#fff",
+                px: 2.5,
+                borderRadius: "8px",
+                fontWeight: 600,
+                textTransform: "none",
+                "&:hover": { bgcolor: "#333" },
+              }}
             >
               Register
             </Button>
           </>
-        )}
-
-        {/* Si está logueado: Perfil / Admin / Logout */}
-        {isLoggedIn && (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Typography variant="body2" sx={{ mr: 1 }}>
-              {(session?.user?.name as string) ?? "User"}
+        ) : (
+          <>
+            {/* USER */}
+            <Typography sx={{ mr: 1, fontWeight: 500 }}>
+              {session?.user?.name}
             </Typography>
 
             <Button
-              color="inherit"
               onClick={() => router.push("/profile")}
+              sx={{ textTransform: "none" }}
             >
               Profile
             </Button>
 
             {role === "admin" && (
               <Button
-                color="inherit"
                 onClick={() => router.push("/admin")}
+                sx={{ textTransform: "none" }}
               >
-                Dashboard Admin
+                Panel Admin
               </Button>
             )}
 
-            <Button
-              color="inherit"
-              onClick={handleLogout}
-            >
+            <Button onClick={handleLogout} sx={{ textTransform: "none" }}>
               Logout
             </Button>
-          </Box>
+          </>
         )}
       </Toolbar>
     </AppBar>

@@ -32,10 +32,12 @@ export default function RegisterPage() {
     try {
       await registerUser(data);
 
-      toast.success("Usuario registrado. Revisa tu correo.");
+      toast.success("Registered user. Check your email.");
       router.push("/auth/login");
-    } catch (error: any) {
-      toast.error(error.message || "Error al registrar");
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Error registering";
+      toast.error(message);
     }
   };
 

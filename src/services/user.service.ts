@@ -1,6 +1,6 @@
 // src/services/user.service.ts
 import axios from "axios";
-import type { UpdateProfileValues } from "@/lib/validators";
+import type { UpdatedUserResponse } from "@/types/user";
 
 export type UpdatedUser = {
   id: string;
@@ -19,7 +19,7 @@ export type UpdatedUser = {
 export async function updateProfile(data: {
   name?: string;
   imageBase64?: string | null;
-}) {
+}): Promise<{ user: UpdatedUserResponse }> {
   const res = await axios.put("/api/users/update-profile", data);
-  return res.data.user; 
+  return res.data as { user: UpdatedUserResponse };
 }

@@ -63,7 +63,7 @@ export default function ProductCard({ product }: Props) {
           </div>
 
           <button className={styles.addButton} onClick={handleAdd}>
-            Añadir
+            Add
           </button>
         </div>
       </div>

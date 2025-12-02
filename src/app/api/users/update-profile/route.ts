@@ -4,7 +4,9 @@ import { authOptions } from "@/lib/auth";
 import connect from "@/lib/db";
 import { User } from "@/schemas/user.schema";
 import cloudinary from "@/lib/cloudinary";
-import { updateProfileSchema, UpdateProfileValues } from "@/lib/validators";
+import { updateProfileSchema, UpdateProfileValues } from "@/lib/validators/validators";
+
+
 
 /**
  * Strong typing for NextAuth session user object.
@@ -42,9 +44,8 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // -----------------------------------------------------
+ 
     // 2) Parse and validate request body with Yup
-    // -----------------------------------------------------
     const body = (await req.json()) as UpdateProfileValues;
 
     const validatedData = await updateProfileSchema.validate(body, {
@@ -54,9 +55,7 @@ export async function PUT(req: Request) {
 
     const { name, imageBase64 } = validatedData;
 
-    // -----------------------------------------------------
-    // 3) Connect to database
-    // -----------------------------------------------------
+    // Connect to database
     await connect();
 
     const user = await User.findOne({ email: session.user.email });
@@ -65,16 +64,15 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // -----------------------------------------------------
-    // 4) Update name if provided
-    // -----------------------------------------------------
+   
+    // Update name if provided 
     if (name) {
       user.name = name.trim();
     }
 
-    // -----------------------------------------------------
-    // 5) Handle profile image update (Cloudinary)
-    // -----------------------------------------------------
+
+    // Handle profile image update (Cloudinary)
+
     if (imageBase64 && imageBase64.startsWith("data:image/")) {
 
       // Remove old image if user had one
@@ -98,14 +96,10 @@ export async function PUT(req: Request) {
       };
     }
 
-    // -----------------------------------------------------
-    // 6) Save updated user
-    // -----------------------------------------------------
+    //  Save updated user
     await user.save();
 
-    // -----------------------------------------------------
-    // 7) Return safe response
-    // -----------------------------------------------------
+    // Return safe response
     return NextResponse.json(
       {
         user: {

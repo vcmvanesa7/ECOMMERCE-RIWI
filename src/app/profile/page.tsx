@@ -11,6 +11,7 @@ import {
   TextField,
   CircularProgress,
 } from "@mui/material";
+import type { Resolver } from "react-hook-form";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
@@ -18,7 +19,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import {
   updateProfileSchema,
   UpdateProfileValues,
-} from "@/lib/validators";
+} from "@/lib/validators/validators";
 import { updateProfile } from "@/services/user.service";
 import { toast } from "sonner";
 
@@ -37,7 +38,7 @@ export default function ProfilePage() {
     formState: { errors },
     reset,
   } = useForm<UpdateProfileValues>({
-    resolver: yupResolver(updateProfileSchema) as any,
+    resolver: yupResolver(updateProfileSchema) as Resolver<UpdateProfileValues>,
     defaultValues: { name: "", imageBase64: null },
   });
 
@@ -52,10 +53,10 @@ export default function ProfilePage() {
       imageBase64: null,
     });
 
-    // si no hay imagen, dejamos null y el Avatar muestra las iniciales
-    setPreview(
-      typeof session.user.image === "string" ? session.user.image : null
-    );
+    const img =
+      typeof session.user.image === "string" ? session.user.image : null;
+
+    setPreview(img);
   }, [session, reset]);
 
   /**
@@ -81,30 +82,23 @@ export default function ProfilePage() {
     try {
       setLoading(true);
 
-      // call API -> get updated user
-      const user = await updateProfile(data);
+      const response = await updateProfile(data);
+      const updated = response.user;
 
       toast.success("Profile updated successfully!");
 
-      // update NextAuth session (name + image URL from Cloudinary)
-      await update({
-        ...session,
-        user: {
-          ...session?.user,
-          name: user.name,
-          image: user.image?.url ?? session?.user?.image,
-        },
-      });
-
-      // update local preview with Cloudinary URL, if we have it
-      if (user.image?.url) {
-        setPreview(user.image.url);
+      await update();
+      
+      if (updated.image?.url) {
+        setPreview(updated.image.url);
       }
 
       setOpen(false);
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err?.response?.data?.error || "Failed to update profile");
+    } catch (err) {
+      console.error("UPDATE ERROR:", err);
+      const message =
+      err instanceof Error ? err.message : "Failed to update profile";
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -119,120 +113,158 @@ export default function ProfilePage() {
   }
 
   return (
-    <Box
-      sx={{
-        maxWidth: 700,
-        mx: "auto",
-        mt: 6,
-        p: 4,
-        borderRadius: 3,
-        boxShadow: 4,
-      }}
-    >
-      {/* Header */}
-      <Typography variant="h4" fontWeight={700} mb={4}>
-        My Account
-      </Typography>
+  <div className="min-h-screen bg-white text-neutral-900 pt-24 pb-20 px-6">
 
-      {/* User summary card */}
-      <Stack direction="row" spacing={3} alignItems="center">
-        <Avatar
-          src={preview ?? undefined}
-          sx={{ width: 120, height: 120, fontSize: 40 }}
+    {/* TITLE */}
+    <h1 className="max-w-[1400px] mx-auto text-4xl font-extrabold uppercase tracking-tight mb-12">
+      My Account
+    </h1>
+
+    {/* USER PANEL */}
+    <div className="
+      max-w-[1400px] mx-auto 
+      w-full
+      rounded-2xl 
+      border border-neutral-200 
+      bg-neutral-50 
+      p-10
+      flex flex-col md:flex-row 
+      items-center 
+      gap-10
+    ">
+      
+      {/* Avatar */}
+      <Avatar
+        src={preview ?? undefined}
+        sx={{
+          width: 150,
+          height: 150,
+          fontSize: 48,
+          border: "4px solid #e5e5e5",
+        }}
+      >
+        {session.user.name?.[0]?.toUpperCase()}
+      </Avatar>
+
+      {/* Info */}
+      <div className="flex-1">
+        <h2 className="text-2xl font-bold uppercase tracking-wide mb-1">
+          {session.user.name}
+        </h2>
+
+        <p className="text-neutral-600 mb-4">{session.user.email}</p>
+
+        <button
+          onClick={() => setOpen(true)}
+          className="
+            px-6 py-2 
+            border-2 border-black 
+            rounded-full 
+            text-sm font-bold uppercase 
+            transition-all
+            hover:bg-black hover:text-white
+          "
         >
-          {/* Fallback initials if no image */}
-          {session.user.name?.[0]?.toUpperCase()}
-        </Avatar>
+          Edit Profile
+        </button>
+      </div>
 
-        <Box>
-          <Typography variant="h6">{session.user.name}</Typography>
-          <Typography color="text.secondary">
-            {session.user.email}
-          </Typography>
+    </div>
+
+    {/* ACTIVITY SECTION */}
+    <div className="max-w-[1400px] mx-auto mt-16">
+      <h3 className="text-xl font-extrabold uppercase tracking-wide">
+        Your Activity
+      </h3>
+      <p className="text-neutral-600 mt-2">
+        Soon you will see your orders, favorite products and more 🎁
+      </p>
+    </div>
+
+    {/* MODAL - unchanged logic */}
+    <Modal open={open} onClose={() => setOpen(false)}>
+      <Box
+        sx={{
+          backgroundColor: "#fff",
+          maxWidth: 420,
+          mx: "auto",
+          mt: 10,
+          p: 4,
+          borderRadius: 3,
+          boxShadow: "0 8px 30px rgba(0,0,0,0.15)",
+        }}
+      >
+        <Typography
+          variant="h6"
+          mb={3}
+          fontWeight={800}
+          sx={{ textTransform: "uppercase", letterSpacing: 1 }}
+        >
+          Edit Profile
+        </Typography>
+
+        <Stack spacing={3}>
+          <Avatar
+            src={preview ?? undefined}
+            sx={{
+              width: 100,
+              height: 100,
+              mx: "auto",
+              fontSize: 36,
+              border: "3px solid #eaeaea",
+            }}
+          />
 
           <Button
             variant="outlined"
-            sx={{ mt: 2 }}
-            onClick={() => setOpen(true)}
+            component="label"
+            sx={{
+              borderRadius: 10,
+              textTransform: "uppercase",
+              fontWeight: 700,
+              "&:hover": { borderColor: "black", color: "black" },
+            }}
           >
-            Edit Profile
+            Change Photo
+            <input type="file" hidden accept="image/*" onChange={handleImageChange} />
           </Button>
-        </Box>
-      </Stack>
 
-      {/* Future activity section */}
-      <Box mt={5}>
-        <Typography variant="h6" fontWeight={600}>
-          Your Activity
-        </Typography>
-        <Typography color="text.secondary" mt={1}>
-          Soon you will see your orders, favorite products and more 🎁
-        </Typography>
+          <TextField
+            label="Name"
+            fullWidth
+            {...register("name")}
+            error={!!errors.name}
+            helperText={errors.name?.message}
+          />
+
+          <TextField
+            label="Email"
+            fullWidth
+            value={session.user.email || ""}
+            disabled
+          />
+
+          <Button
+            variant="contained"
+            fullWidth
+            disabled={loading}
+            onClick={handleSubmit(onSubmit)}
+            startIcon={loading ? <CircularProgress size={18} /> : null}
+            sx={{
+              py: 1.4,
+              backgroundColor: "black",
+              fontWeight: 700,
+              letterSpacing: 0.5,
+              textTransform: "uppercase",
+              "&:hover": { backgroundColor: "#222" },
+            }}
+          >
+            {loading ? "Saving..." : "Save Changes"}
+          </Button>
+        </Stack>
       </Box>
+    </Modal>
 
-      {/* ================= MODAL: EDIT PROFILE ================= */}
-      <Modal open={open} onClose={() => setOpen(false)}>
-        <Box
-          sx={{
-            backgroundColor: "#fff",
-            maxWidth: 450,
-            mx: "auto",
-            mt: 10,
-            p: 4,
-            borderRadius: 3,
-            boxShadow: 10,
-          }}
-        >
-          <Typography variant="h6" mb={3} fontWeight={600}>
-            Edit Profile
-          </Typography>
-
-          <Stack spacing={3}>
-            <Avatar
-              src={preview ?? undefined}
-              sx={{ width: 100, height: 100, mx: "auto", fontSize: 36 }}
-            >
-              {session.user.name?.[0]?.toUpperCase()}
-            </Avatar>
-
-            <Button variant="outlined" component="label">
-              Change photo
-              <input
-                type="file"
-                hidden
-                accept="image/*"
-                onChange={handleImageChange}
-              />
-            </Button>
-
-            <TextField
-              label="Name"
-              fullWidth
-              {...register("name")}
-              error={!!errors.name}
-              helperText={errors.name?.message}
-            />
-
-            {/* Email read-only outside del form */}
-            <TextField
-              label="Email"
-              fullWidth
-              value={session.user.email || ""}
-              disabled
-            />
-
-            <Button
-              variant="contained"
-              fullWidth
-              disabled={loading}
-              onClick={handleSubmit(onSubmit)}
-              startIcon={loading ? <CircularProgress size={18} /> : null}
-            >
-              {loading ? "Saving..." : "Save changes"}
-            </Button>
-          </Stack>
-        </Box>
-      </Modal>
-    </Box>
-  );
+  </div>
+);
 }

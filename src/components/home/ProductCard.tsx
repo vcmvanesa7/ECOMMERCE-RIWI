@@ -1,62 +1,78 @@
-import Link from "next/link";
+"use client";
+
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
+import type { IProduct } from "@/schemas/products/product.schema";
 
-type Product = {
-  _id: string;
-  title: string;
-  price: number;
-  category?: string;
-  images?: { url: string }[];
-};
+interface ProductCardProps {
+  product: IProduct;
+  compact?: boolean;
+}
 
-function ProductCard({ product, compact = false }: { product: Product; compact?: boolean }) {
-  const imageUrl =
-    product.images && product.images[0]?.url
-      ? product.images[0].url
-      : "/placeholder-product.png";
+export default function ProductCard({
+  product,
+  compact = false,
+}: ProductCardProps) {
+  const img = product.images?.[0]?.url || "/placeholder.png";
 
   return (
-    <Link href={`/products/${product._id}`}>
-      <motion.article
-        whileHover={{ y: -6 }}
-        className="group cursor-pointer rounded-2xl border border-neutral-200 bg-white overflow-hidden shadow-sm hover:shadow-xl transition"
-      >
-        <div className="relative aspect-[4/5] bg-neutral-100 overflow-hidden">
+    <motion.div
+      whileHover={{ scale: 1.03 }}
+      transition={{ duration: 0.25 }}
+      className="relative group"
+    >
+      <Link href={`/products/${product._id}`}>
+        {/* IMAGE WRAPPER */}
+
+        <div
+          className="
+        overflow-hidden rounded-3xl relative
+        bg-gradient-to-br from-neutral-100 to-neutral-200
+        shadow-md group-hover:shadow-xl 
+        transition-all duration-300
+        aspect-[4/5] 
+        w-full          
+        max-h-[480px]  
+  "
+        >
           <Image
-            src={imageUrl}
+            src={img}
             alt={product.title}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
+            width={500}
+            height={500}
+            className="
+              w-full h-full object-cover rounded-3xl 
+              group-hover:scale-110 transition-all duration-500
+            "
           />
-          <div className="absolute top-3 left-3">
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-black/80 text-[10px] uppercase tracking-[0.16em] text-white">
-              {product.category || "Drop"}
-            </span>
+
+          {/* GLASS LABEL (OPTIONAL) */}
+          <div
+            className="
+              absolute bottom-3 left-3 
+              px-3 py-1 rounded-full text-xs font-medium
+              backdrop-blur-md bg-white/20 text-white
+              opacity-0 group-hover:opacity-100 transition-all
+            "
+          >
+            View details →
           </div>
         </div>
 
-        <div className="p-3.5 space-y-1.5">
-          <p className="text-xs font-medium uppercase tracking-[0.16em] text-neutral-500">
-            KOI STREET
-          </p>
-          <h3 className="text-sm font-semibold text-neutral-900 line-clamp-2">
+        {/* TEXT */}
+        <div className="mt-3 px-1">
+          <h3 className="font-semibold text-base tracking-tight text-neutral-900">
             {product.title}
           </h3>
 
-          <div className="flex items-center justify-between pt-1">
-            <span className="text-sm font-semibold text-neutral-900">
-              ${product.price?.toFixed ? product.price.toFixed(2) : product.price}
-            </span>
-            {!compact && (
-              <span className="text-[11px] text-neutral-500 group-hover:text-neutral-900 transition">
-                View details →
-              </span>
-            )}
-          </div>
+          {!compact && (
+            <p className="text-neutral-600 text-sm mt-1 font-medium">
+              ${product.price.toFixed(2)}
+            </p>
+          )}
         </div>
-      </motion.article>
-    </Link>
+      </Link>
+    </motion.div>
   );
 }
-export default ProductCard;

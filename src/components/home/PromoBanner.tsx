@@ -1,13 +1,9 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 
-
 function PromoBanner() {
   return (
-    <section
-      id="highlights"
-      className="max-w-6xl mx-auto px-4 mt-20"
-    >
+    <section id="highlights" className="max-w-[1400px] mx-auto px-6 mt-20">
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -23,8 +19,8 @@ function PromoBanner() {
             KOI Duality Night Drop
           </h2>
           <p className="mt-2 text-sm text-neutral-300 max-w-md">
-            Piezas en negro, hints en koi orange, gráficos inspirados en dualidad,
-            río, movimiento. Disponible solo este mes.
+            Piezas en negro, hints en koi orange, gráficos inspirados en
+            dualidad, río, movimiento. Disponible solo este mes.
           </p>
 
           <div className="mt-4 flex flex-wrap gap-3">

@@ -1,9 +1,10 @@
+// src/app/api/auth/register/route.ts
 import { NextResponse } from "next/server";
 import * as yup from "yup";
 import connect from "@/lib/db";
 import { User } from "@/schemas/user.schema";
 import { hashPassword } from "@/lib/bcrypt";
-import { sendEmail } from "@/lib/mailer";
+import { sendWelcomeEmail } from "@/lib/mailer";
 
 const registerSchema = yup.object({
   name: yup.string().required(),
@@ -15,15 +16,21 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
+    // Validate request body
     await registerSchema.validate(body, { abortEarly: false });
 
     await connect();
 
+    // Check if email already exists
     const exists = await User.findOne({ email: body.email });
     if (exists) {
-      return NextResponse.json({ error: "Email already registered" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Email already registered" },
+        { status: 400 }
+      );
     }
 
+    // Create user
     const passwordHash = await hashPassword(body.password);
 
     const user = await User.create({
@@ -34,15 +41,14 @@ export async function POST(req: Request) {
       role: "client",
     });
 
-    // Email bienvenida
+    // Send welcome email 
     try {
-      const html = `
-        <p>Hola ${user.name},</p>
-        <p>Bienvenid@ a nuestra tienda 🛒✨</p>
-      `;
-      await sendEmail(user.email, "¡Bienvenido/a!", html);
+      await sendWelcomeEmail(
+        String(user.email), // to
+        String(user.name) // name
+      );
     } catch (err) {
-      console.warn("Error enviando email:", err);
+      console.warn("Error sending welcome email:", err);
     }
 
     return NextResponse.json({ ok: true });
