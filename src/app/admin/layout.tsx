@@ -5,7 +5,11 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "../../lib/auth";
 
-export default async function AdminLayout({ children }: { children: ReactNode }) {
+export default async function AdminLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const session = await getServerSession(authOptions);
 
   // Si no está logueado → loginasync jwt
@@ -13,13 +17,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     redirect("/auth/login");
   }
 
-   if (session.user.role !== "admin") {
+  if (session.user.role !== "admin") {
     redirect("/");
-   }
+  }
 
-  return (
-    <div style={{ padding: "30px" }}>
-      {children}
-    </div>
-  );
+  return <div style={{ padding: "30px" }}>{children}</div>;
 }

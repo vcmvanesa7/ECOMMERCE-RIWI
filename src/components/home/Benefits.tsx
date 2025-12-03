@@ -1,13 +1,10 @@
-
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 
 function BenefitsStrip() {
-  const items = [
-    "Free shipping over $80",
-    "Limited drops only",
-    "Designed for street & skate",
-    "Secure checkout",
-  ];
+  const t = useTranslations("home.benefits");
+
+  const items = [t("1"), t("2"), t("3"), t("4")];
 
   return (
     <motion.div
@@ -28,4 +25,5 @@ function BenefitsStrip() {
     </motion.div>
   );
 }
+
 export default BenefitsStrip;

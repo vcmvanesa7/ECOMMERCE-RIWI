@@ -12,20 +12,22 @@ export async function DELETE() {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Not authenticated" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    await Cart.findOneAndUpdate(
+    // Clearitems
+    const cart = await Cart.findOneAndUpdate(
       { userId: session.user.id },
-      { items: [] }
-    );
+      { items: [] },
+      { new: true }
+    ).lean();
 
-    return NextResponse.json({ ok: true });
+    //if not exist, empty
+    return NextResponse.json({
+      cart: cart ? { items: [] } : { items: [] },
+    });
   } catch (err) {
-    console.error(err);
+    console.error("CLEAR CART ERROR:", err);
     return NextResponse.json(
       { error: "Failed to clear cart" },
       { status: 500 }

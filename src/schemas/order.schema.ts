@@ -1,52 +1,73 @@
-// src/schemas/order.schema.ts
-import mongoose, { Schema, Document, Model } from "mongoose";
-
-export interface IOrderItem {
-  productId: mongoose.Types.ObjectId;
-  qty: number;
-  priceAtBuy: number;
-  variant?: string;
-}
-
-export interface IShippingAddress {
-  street: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  country: string;
-}
-
-export interface IPaymentInfo {
-  method: string;
-  transactionId?: string;
-  status?: string;
-}
+import mongoose, { Schema, Document } from "mongoose";
 
 export interface IOrder extends Document {
   userId: mongoose.Types.ObjectId;
-  items: IOrderItem[];
+  paypalOrderId: string;
+
+  items: {
+    productId: string;
+    qty: number;
+    priceAtAdd: number;
+    variant?: string;
+    title: string;
+    image: string;
+  }[];
+
   total: number;
-  status: "pending" | "paid" | "shipped" | "delivered" | "cancelled";
+
+  status: "pending" | "paid" | "failed";
+  paymentMethod: "paypal" | "testing";
+
+  shippingStatus:
+    | "pending"
+    | "processing"
+    | "shipped"
+    | "delivered"
+    | "cancelled";
+
   createdAt: Date;
   updatedAt: Date;
-  shippingAddress?: IShippingAddress;
-  paymentInfo?: IPaymentInfo;
 }
 
-const OrderItemSchema = new Schema<IOrderItem>({
-  productId: { type: Schema.Types.ObjectId, ref: "Product", required: true },
-  qty: Number,
-  priceAtBuy: Number,
-  variant: String,
-});
+const OrderSchema = new Schema<IOrder>(
+  {
+    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
 
-const OrderSchema: Schema = new Schema<IOrder>({
-  userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-  items: [OrderItemSchema],
-  total: { type: Number, required: true },
-  status: { type: String, default: "pending" },
-  shippingAddress: Schema.Types.Mixed,
-  paymentInfo: Schema.Types.Mixed,
-}, { timestamps: true });
+    paypalOrderId: { type: String, required: true },
 
-export const Order: Model<IOrder> = (mongoose.models.Order as Model<IOrder>) || mongoose.model<IOrder>("Order", OrderSchema);
+    items: [
+      {
+        productId: String,
+        qty: Number,
+        priceAtAdd: Number,
+        variant: String,
+        title: String,
+        image: String,
+      },
+    ],
+
+    total: { type: Number, required: true },
+
+    status: {
+      type: String,
+      enum: ["pending", "paid", "failed"],
+      default: "pending",
+    },
+
+    paymentMethod: {
+      type: String,
+      enum: ["paypal", "testing"],
+      required: true,
+    },
+
+    shippingStatus: {
+      type: String,
+      enum: ["pending", "processing", "shipped", "delivered", "cancelled"],
+      default: "pending",
+    },
+  },
+  { timestamps: true }
+);
+
+export const Order =
+  mongoose.models.Order || mongoose.model<IOrder>("Order", OrderSchema);

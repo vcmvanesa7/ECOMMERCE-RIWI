@@ -1,9 +1,10 @@
 import mongoose, { Schema, Model } from "mongoose";
 
 export interface IUser {
+  _id: string;
   name?: string;
   email: string;
-  passwordHash?: string | null;        // only for credentials provider
+  passwordHash?: string | null; // only for credentials provider
   provider: "credentials" | "google";
   role: "client" | "admin" | "support";
 
@@ -67,5 +68,3 @@ const UserSchema = new Schema<IUser>(
 
 export const User: Model<IUser> =
   mongoose.models.User || mongoose.model<IUser>("User", UserSchema);
-
-  

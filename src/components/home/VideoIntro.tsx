@@ -1,10 +1,13 @@
 "use client";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 export default function VideoIntro() {
+  const t = useTranslations("home.videoIntro");
+
   return (
-    <section className="relative w-full h-[80vh] md:h-[90vh] overflow-hidden">
+    <section className="relative w-full h-[80vh] md:h-[80vh] overflow-hidden">
       {/* VIDEO */}
       <video
         src="/videos/intro-fashion.mp4"
@@ -29,7 +32,7 @@ export default function VideoIntro() {
         className="relative z-10 w-full h-full flex flex-col 
                items-center justify-center text-center text-white px-4"
       >
-        {/* LOGO KOI GRANDE Y ELEGANTE */}
+        {/* LOGO */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -45,25 +48,24 @@ export default function VideoIntro() {
           />
         </motion.div>
 
-        {/* TITULO GRANDE */}
+        {/* TITULO */}
         <motion.h2
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
           className="mt-6 text-4xl md:text-6xl font-semibold tracking-tight"
         >
-          Streetwear for Him & Her
+          {t("title")}
         </motion.h2>
 
-        {/* SUBTEXTO EDITORIAL */}
+        {/* SUBTITULO */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.2 }}
           className="mt-3 text-base md:text-xl text-neutral-200 max-w-2xl"
         >
-          Oversized tees, cargos, hoodies & limited drops inspired by modern
-          urban fashion.
+          {t("subtitle")}
         </motion.p>
       </motion.div>
     </section>

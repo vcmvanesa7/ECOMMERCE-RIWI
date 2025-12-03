@@ -19,14 +19,14 @@ import {
   clearCart,
 } from "@/services/cart/cart.service";
 
-// Types
+import { clearGuestCart } from "@/utils/clearGuestCart";
+import { sanitizeCart } from "@/utils/sanitizeCart";
+
 interface AddItemPayload {
   productId: string;
   qty?: number;
   priceAtAdd: number;
   variant?: string;
-
-  // Required for GUEST users
   title: string;
   image: string;
 }
@@ -36,33 +36,49 @@ interface CartContextValue {
   loading: boolean;
 
   addItem: (payload: AddItemPayload) => Promise<void>;
-  updateItem: (productId: string, qty: number, variant?: string) => Promise<void>;
+  updateItem: (
+    productId: string,
+    qty: number,
+    variant?: string
+  ) => Promise<void>;
   removeItem: (productId: string, variant?: string) => Promise<void>;
   clear: () => Promise<void>;
-
   refresh: () => Promise<void>;
 }
 
-// CONTEXT
 const CartContext = createContext<CartContextValue | undefined>(undefined);
 
-// PROVIDER
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
 
   const [cart, setCart] = useState<CartDTO | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // LOAD CART
+  /**
+   * Cuando el usuario INICIA SESIÓN:
+   * → Limpiamos el carrito invitado para evitar items viejos.
+   */
+  useEffect(() => {
+    if (session) {
+      clearGuestCart();
+    }
+  }, [session]);
+
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
+      // --- USER GUEST (NO SESSION) ---
       if (!session) {
         const local = localStorage.getItem("cart");
-        setCart(local ? JSON.parse(local) : { items: [] });
+        const parsed: CartDTO = local ? JSON.parse(local) : { items: [] };
+
+        const sanitized = sanitizeCart(parsed);
+        localStorage.setItem("cart", JSON.stringify(sanitized));
+        setCart(sanitized);
         return;
       }
 
+      // --- USER LOGGED ---
       const serverCart = await getCart();
       setCart(serverCart);
     } catch (err) {
@@ -78,11 +94,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // ADD ITEM
   const addItem = useCallback(
-    async (payload: AddItemPayload) => {
-      const { productId, qty = 1, priceAtAdd, title, image, variant } = payload;
-
+    async ({
+      productId,
+      qty = 1,
+      priceAtAdd,
+      title,
+      image,
+      variant,
+    }: AddItemPayload) => {
       if (!session) {
-        // Guest user → LocalStorage
         const local = localStorage.getItem("cart");
         const parsed: CartDTO = local ? JSON.parse(local) : { items: [] };
 
@@ -105,16 +125,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           });
         }
 
-        localStorage.setItem("cart", JSON.stringify(parsed));
-        setCart(parsed);
+        const sanitized = sanitizeCart(parsed);
+        localStorage.setItem("cart", JSON.stringify(sanitized));
+        setCart(sanitized);
         return;
       }
 
-      // Logged user → API
-      const updated = await addToCart(productId, qty, variant);
-      setCart(updated);
+      await addToCart(productId, qty, variant);
+      await refresh();
     },
-    [session]
+    [session, refresh]
   );
 
   // UPDATE ITEM
@@ -141,15 +161,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           if (item) item.qty = qty;
         }
 
-        localStorage.setItem("cart", JSON.stringify(parsed));
-        setCart(parsed);
+        const sanitized = sanitizeCart(parsed);
+        localStorage.setItem("cart", JSON.stringify(sanitized));
+        setCart(sanitized);
         return;
       }
 
-      const updated = await updateCartItem(productId, qty, variant);
-      setCart(updated);
+      await updateCartItem(productId, qty, variant);
+      await refresh();
     },
-    [session]
+    [session, refresh]
   );
 
   // REMOVE ITEM
@@ -167,28 +188,29 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             )
         );
 
-        localStorage.setItem("cart", JSON.stringify(parsed));
-        setCart(parsed);
+        const sanitized = sanitizeCart(parsed);
+        localStorage.setItem("cart", JSON.stringify(sanitized));
+        setCart(sanitized);
         return;
       }
 
-      const updated = await removeFromCart(productId, variant);
-      setCart(updated);
+      await removeFromCart(productId, variant);
+      await refresh();
     },
-    [session]
+    [session, refresh]
   );
 
   // CLEAR CART
   const clear = useCallback(async () => {
     if (!session) {
-      localStorage.removeItem("cart");
-      setCart({ items: [] });
+      const empty = clearGuestCart();
+      setCart(empty);
       return;
     }
 
     await clearCart();
-    setCart({ items: [] });
-  }, [session]);
+    await refresh();
+  }, [session, refresh]);
 
   return (
     <CartContext.Provider
@@ -207,7 +229,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// HOOK
 export function useCart() {
   const ctx = useContext(CartContext);
   if (!ctx) throw new Error("useCart must be used within CartProvider");

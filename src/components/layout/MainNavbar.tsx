@@ -1,30 +1,36 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import {
-  AppBar,
-  Toolbar,
-  Typography,
-  Box,
-  IconButton,
-  Button,
-  Badge,
-} from "@mui/material";
+import { AppBar, Toolbar, Box, IconButton, Button, Badge } from "@mui/material";
+import LanguageSwitcher from "@/components/common/LanguageSwitcher";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { useCart } from "@/context/cart-context";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 export default function MainNavbar() {
   const router = useRouter();
+  const pathname = usePathname(); // Used to extract the current locale
   const { data: session, status } = useSession();
   const { cart } = useCart();
+
+  const t = useTranslations("Navbar");
+
+  // Extract locale from pathname ("/es/products" → "es")
+  const locale = pathname.split("/")[1] || "es";
+
+  // Helper to preserve locale when navigating
+  const goTo = (path: string) => {
+    router.push(`/${locale}${path}`);
+  };
 
   const itemsCount =
     cart?.items?.reduce((acc, item) => acc + (item.qty ?? 0), 0) ?? 0;
 
   const handleLogout = async () => {
-    await signOut({ callbackUrl: "/" });
+    await signOut({ callbackUrl: `/${locale}` });
   };
 
   const isLoggedIn = status === "authenticated";
@@ -35,27 +41,28 @@ export default function MainNavbar() {
       position="sticky"
       elevation={0}
       sx={{
-        backgroundColor: "#ffffff",
+        backgroundColor: "#fff",
         borderBottom: "1px solid #e5e5e5",
       }}
     >
       <Toolbar
         sx={{
-          maxWidth: 1400,
+          maxWidth: "1400px",
           mx: "auto",
           width: "100%",
           display: "flex",
           alignItems: "center",
+          py: 1.5,
         }}
       >
-        {/* LOGO */}
+        {/* LOGO → Always redirect to localized home */}
         <Box
           sx={{
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
           }}
-          onClick={() => router.push("/")}
+          onClick={() => goTo("")}
         >
           <Image
             src="/logs/Horizontal.png"
@@ -69,78 +76,102 @@ export default function MainNavbar() {
 
         <Box sx={{ flexGrow: 1 }} />
 
-        {/* CARRITO */}
-        <IconButton
-          color="inherit"
-          onClick={() => router.push("/cart")}
-          sx={{ mr: 2 }}
-        >
-          <Badge
-            badgeContent={itemsCount}
-            sx={{ "& .MuiBadge-badge": { backgroundColor: "#111" } }}
+        {/* RIGHT SECTION */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
+          {/* CART */}
+          <IconButton onClick={() => goTo("/cart")} sx={{ color: "#111" }}>
+            <Badge
+              badgeContent={itemsCount}
+              sx={{
+                "& .MuiBadge-badge": {
+                  backgroundColor: "#111",
+                  color: "white",
+                },
+              }}
+            >
+              <ShoppingCartIcon />
+            </Badge>
+          </IconButton>
+
+          {/* PRODUCTS */}
+          <Button
+            sx={{
+              color: "#111",
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: 14,
+            }}
+            onClick={() => goTo("/products")}
           >
-            <ShoppingCartIcon sx={{ color: "#111" }} />
-          </Badge>
-        </IconButton>
+            {t("products")}
+          </Button>
 
-        {/* AUTH BUTTONS */}
-        {!isLoggedIn ? (
-          <>
-            <Button
-              onClick={() => router.push("/auth/login")}
-              sx={{
-                color: "#111",
-                fontWeight: 600,
-                textTransform: "none",
-                mx: 1,
-              }}
-            >
-              Login
-            </Button>
-
-            <Button
-              onClick={() => router.push("/auth/register")}
-              sx={{
-                bgcolor: "#111",
-                color: "#fff",
-                px: 2.5,
-                borderRadius: "8px",
-                fontWeight: 600,
-                textTransform: "none",
-                "&:hover": { bgcolor: "#333" },
-              }}
-            >
-              Register
-            </Button>
-          </>
-        ) : (
-          <>
-            {/* USER */}
-            <Typography sx={{ mr: 1, fontWeight: 500 }}>
-              {session?.user?.name}
-            </Typography>
-
-            <Button
-              onClick={() => router.push("/profile")}
-              sx={{ textTransform: "none" }}
-            >
-              Profile
-            </Button>
-
-            {role === "admin" && (
+          {!isLoggedIn ? (
+            <>
+              {/* LOGIN */}
               <Button
-                onClick={() => router.push("/admin")}
-                sx={{ textTransform: "none" }}
+                onClick={() => goTo("/auth/login")}
+                sx={{ color: "#111", fontWeight: 600, textTransform: "none" }}
               >
-                Panel Admin
+                {t("login")}
               </Button>
-            )}
 
-            <Button onClick={handleLogout} sx={{ textTransform: "none" }}>
-              Logout
-            </Button>
-          </>
-        )}
+              {/* REGISTER */}
+              <Button
+                onClick={() => goTo("/auth/register")}
+                sx={{
+                  bgcolor: "#111",
+                  color: "#fff",
+                  px: 2.5,
+                  borderRadius: "8px",
+                  fontWeight: 600,
+                  textTransform: "none",
+                  "&:hover": { bgcolor: "#333" },
+                }}
+              >
+                {t("register")}
+              </Button>
+            </>
+          ) : (
+            <>
+              {/* ADMIN PANEL */}
+              {role === "admin" && (
+                <Button
+                  onClick={() => router.push("/admin")}
+                  sx={{ textTransform: "none", color: "#111" }}
+                >
+                  {t("adminPanel")}
+                </Button>
+              )}
+
+              {/* LANGUAGE SWITCHER */}
+              <LanguageSwitcher />
+
+              {/* PROFILE */}
+              <Button
+                onClick={() => goTo("/profile")}
+                sx={{
+                  textTransform: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  color: "#111",
+                }}
+              >
+                <AccountCircleIcon sx={{ fontSize: 22 }} />
+                {session?.user?.name?.split(" ")[0] ?? t("profile")}
+              </Button>
+
+              {/* LOGOUT */}
+              <Button
+                onClick={handleLogout}
+                sx={{ textTransform: "none", color: "#111" }}
+              >
+                {t("logout")}
+              </Button>
+            </>
+          )}
+        </Box>
       </Toolbar>
     </AppBar>
   );
