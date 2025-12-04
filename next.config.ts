@@ -8,22 +8,37 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "lh3.googleusercontent.com", // Google OAuth
+        pathname: "/**",
       },
       {
         protocol: "https",
-        hostname: "res.cloudinary.com", // Cloudinary (products y profile)
+        hostname: "res.cloudinary.com", // Product images
+        pathname: "/**",
       },
-    ],
-    domains: [
-      "images.unsplash.com",
-      "images.pexels.com",
-      "i.imgur.com",
-      "cdn.sanity.io",
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "images.pexels.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "i.imgur.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn.sanity.io",
+        pathname: "/**",
+      },
     ],
   },
 };
 
-// Plugin de next-intl (route: src/i18n/request.ts)
 const withNextIntl = createNextIntlPlugin();
 
 export default withNextIntl(nextConfig);
