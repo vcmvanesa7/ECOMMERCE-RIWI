@@ -29,7 +29,15 @@ export default function ProductCard({ product }: Props) {
 
   const handleAdd = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    await addItem(product._id, 1);
+
+    await addItem({
+      productId: product._id,
+      qty: 1,
+      priceAtAdd: finalPrice,
+      title: product.title,
+      image: img ?? "",
+    });
+
     toast.success("Added to cart");
   };
 
