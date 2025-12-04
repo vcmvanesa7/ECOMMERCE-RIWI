@@ -20,7 +20,6 @@ export default async function LocaleLayout(props: {
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
-      {/* CON providers del global layout YA EXISTENTES */}
       <MainNavbar />
       <main className="flex-grow">{children}</main>
       <Footer />

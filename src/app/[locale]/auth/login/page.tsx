@@ -42,6 +42,8 @@ export default function LoginPage() {
         password: data.password,
       });
 
+      console.log("NEXTAUTH RESPONSE:", res);
+
       if (res?.error) {
         toast.error(res.error);
         return;

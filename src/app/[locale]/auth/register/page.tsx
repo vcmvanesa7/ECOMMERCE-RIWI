@@ -8,6 +8,7 @@ import {
   Stack,
   Divider,
 } from "@mui/material";
+import { usePathname } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { registerSchema, RegisterFormValues } from "@/schemas/validations";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -18,6 +19,8 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
+  const pathname = usePathname();
+  const locale = pathname.split("/")[1] || "es";
   const router = useRouter();
 
   const {
@@ -33,7 +36,7 @@ export default function RegisterPage() {
       await registerUser(data);
 
       toast.success("Registered user. Check your email.");
-      router.push("/auth/login");
+      router.push(`/${locale}/auth/login`);
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "Error registering";
@@ -98,7 +101,10 @@ export default function RegisterPage() {
             Continue with Google
           </Button>
 
-          <Button fullWidth onClick={() => router.push("/auth/login")}>
+          <Button
+            fullWidth
+            onClick={() => router.push(`/${locale}/auth/login`)}
+          >
             Already have an account?
           </Button>
         </Stack>
