@@ -31,7 +31,7 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+koi-nine.vercel.app
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
@@ -120,11 +120,11 @@ complete admin dashboard.
     /src
       /app
         /[locale]
-        /auth
-        /cart
-        /checkout
-        /products
-        /profile
+          /auth
+          /cart
+          /checkout
+          /products
+          /profile
         /admin
         /api
       /components
@@ -193,7 +193,6 @@ complete admin dashboard.
 ### 1. Clone the repository
 
     https://github.com/vcmvanesa7/ECOMMERCE-RIWI.git
-    cd koi-streetwear
 
 ### 2. Install dependencies
 
